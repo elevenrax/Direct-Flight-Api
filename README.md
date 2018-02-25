@@ -51,11 +51,8 @@ If credentials are valid, returns a Json array containing Booking objects. A boo
 ```json
 [
     {
-        // Unique system generated identifier
         "bookingId": 1,
-        // Username who booking is tied to
         "username": "nathan",
-        //
         "bookedon": "Sun Feb 25 11:46:34 AEDT 2018",
         "bookedFlights": [
             {

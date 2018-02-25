@@ -81,12 +81,12 @@ try:
     print("\nTest: HTTPS only.")
     payload = {'username': 'nathan', 'password': 'securepassword123'}
     r = requests.post("http://localhost:8080" + '/bookings', json=payload, verify=False)
-    assertDenyConnection(lineno() + " /Booking: Attempt to use unsafe http on port 8080. Expect RefusedConnection, did not get.", test_passed=False)
+    assertDenyConnection(lineno() + " /booking: Attempt to use unsafe http on port 8080. Expect RefusedConnection, did not get.", test_passed=False)
 except (ConnectionRefusedError, ConnectionError, 
     requests.packages.urllib3.exceptions.NewConnectionError, 
     requests.packages.urllib3.exceptions.MaxRetryError, 
     requests.exceptions.ConnectionError):
-    assertDenyConnection(lineno() + " /Booking: Attempt to use unsafe http on port 8080. Expect RefusedConnection, got.", test_passed=True)
+    assertDenyConnection(lineno() + " /booking: Attempt to use unsafe http on port 8080. Expect RefusedConnection, got.", test_passed=True)
 except Exception:
     '''
     '''
@@ -127,7 +127,7 @@ payload = {'username': 'nathan', 'password': 'securepassword123'}
 r2 = requests.post(URL + '/bookings', json=payload, verify=False)
 flightNo = r2.json()[0]['bookedFlights'][0]['flightNumber']
 assertRecordAdded(lineno() + " /commit: Make valid booking, for valid user. Check /bookings for success.", len(r2.json()), 1)
-assertCorrectValue(lineno() + " /commit: Check flightnumber is correct.", flightNo, "UA0932")
+assertCorrectValue(lineno() + " /bookings: Check flightnumber is correct.", flightNo, "UA0932")
 
 print("\nTest: Add a second valid booking with two flights and verify results")
 payload = {'username': 'nathan', 'password': 'securepassword123', 'flightnumbers': ['QF090', 'QF092']}
@@ -137,44 +137,48 @@ r2 = requests.post(URL + '/bookings', json=payload, verify=False)
 flightNo1 = r2.json()[1]['bookedFlights'][0]['flightNumber']
 flightNo2 = r2.json()[1]['bookedFlights'][1]['flightNumber']
 assertRecordAdded(lineno() + " /commit: Make valid booking, for valid user. Check /bookings for success.", len(r2.json()), 2)
-assertCorrectValue(lineno() + " /commit: Check flightnumber 1 is correct.", flightNo1, "QF090")
-assertCorrectValue(lineno() + " /commit: Check flightnumber 2 is correct.", flightNo2, "QF092")
+assertCorrectValue(lineno() + " /bookings: Check flightnumber 1 is correct.", flightNo1, "QF090")
+assertCorrectValue(lineno() + " /bookings: Check flightnumber 2 is correct.", flightNo2, "QF092")
 
 print("\nTest: Add a third INVALID booking and verify results")
 payload = {'username': 'nathan', 'password': 'securepassword123', 'flightnumbers': ['NOT_A_FLIGHT']}
 r1 = requests.post(URL + '/commit', json=payload, verify=False)
 payload = {'username': 'nathan', 'password': 'securepassword123'}
 r2 = requests.post(URL + '/bookings', json=payload, verify=False)
-flightNo1 = r2.json()[1]['bookedFlights'][0]['flightNumber']
 assertStatus(lineno() + " /commit: Check bad request given invalid flight provided.", r1.status_code, 400)
-assertRecordAdded(lineno() + " /commit: Check count of bookings remains unchanged.", len(r2.json()), 2)
+assertRecordAdded(lineno() + " /bookings: Check count of bookings remains unchanged.", len(r2.json()), 2)
+
+print("\nTest: Add a booking of several flights, where one flight is invalid")
+payload = {'username': 'nathan', 'password': 'securepassword123', 'flightnumbers': ['QF090', 'QF092', 'NOT_A_FLIGHT']}
+r1 = requests.post(URL + '/commit', json=payload, verify=False)
+payload = {'username': 'nathan', 'password': 'securepassword123'}
+r2 = requests.post(URL + '/bookings', json=payload, verify=False)
+assertStatus(lineno() + " /commit: Check bad request given invalid flight provided.", r1.status_code, 400)
+assertRecordAdded(lineno() + " /bookings: Check count of bookings remains unchanged.", len(r2.json()), 2)
 
 print("\nTest: Add a booking using incorrect login name")
 payload = {'username': 'nathanzzzzz', 'password': 'securepassword123', 'flightnumbers': ['QF090']}
 r1 = requests.post(URL + '/commit', json=payload, verify=False)
 payload = {'username': 'nathan', 'password': 'securepassword123'}
 r2 = requests.post(URL + '/bookings', json=payload, verify=False)
-flightNo1 = r2.json()[1]['bookedFlights'][0]['flightNumber']
 assertStatus(lineno() + " /commit: Check Unauthorised given invalid flight provided.", r1.status_code, 401)
-assertRecordAdded(lineno() + " /commit: Check count of bookings remains unchanged.", len(r2.json()), 2)
+assertRecordAdded(lineno() + " /bookings: Check count of bookings remains unchanged.", len(r2.json()), 2)
 
 print("\nTest: Add a booking using incorrect password")
 payload = {'username': 'nathan', 'password': 'not_my_pass', 'flightnumbers': ['QF090']}
 r1 = requests.post(URL + '/commit', json=payload, verify=False)
 payload = {'username': 'nathan', 'password': 'securepassword123'}
 r2 = requests.post(URL + '/bookings', json=payload, verify=False)
-flightNo1 = r2.json()[1]['bookedFlights'][0]['flightNumber']
 assertStatus(lineno() + " /commit: Check Unauthorised given invalid flight provided.", r1.status_code, 401)
-assertRecordAdded(lineno() + " /commit: Check count of bookings remains unchanged.", len(r2.json()), 2)
+assertRecordAdded(lineno() + " /bookings: Check count of bookings remains unchanged.", len(r2.json()), 2)
 
 print("\nTest: Add a booking using malformed payload i.e. no flightnumber attributes")
 payload = {'username': 'nathan', 'password': 'securepassword123'}
 r1 = requests.post(URL + '/commit', json=payload, verify=False)
 payload = {'username': 'nathan', 'password': 'securepassword123'}
 r2 = requests.post(URL + '/bookings', json=payload, verify=False)
-flightNo1 = r2.json()[1]['bookedFlights'][0]['flightNumber']
 assertStatus(lineno() + " /commit: Check Bad Request given malformed payload.", r1.status_code, 400)
-assertRecordAdded(lineno() + " /commit: Check count of bookings remains unchanged.", len(r2.json()), 2)
+assertRecordAdded(lineno() + " /bookings: Check count of bookings remains unchanged.", len(r2.json()), 2)
 
 
 #######################
